@@ -1,1 +1,57 @@
-
+:root {
+    --color-primario: #007BFF; /* Azul principal */
+    --color-primario-hover: #0056b3; /* Azul oscuro para hover */
+    --color-secundario: #f9f9f9; /* Fondo claro */
+    --color-borde: #ddd; /* Bordes suaves */
+    --color-texto: #333; /* Texto principal */
+    --color-texto-secundario: #555; /* Texto secundario */
+    --color-error: #ff4d4d; /* Rojo para errores */
+    --color-exito: #28a745; /* Verde para mensajes de éxito */
+    --color-desactivado: #ccc; /* Gris para elementos deshabilitados */
+  }
+  
+  /* Aplicar colores globalmente */
+  body {
+    background-color: var(--color-secundario);
+    color: var(--color-texto);
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Enlaces */
+  a {
+    color: var(--color-primario);
+    text-decoration: none;
+  }
+  
+  a:hover {
+    color: var(--color-primario-hover);
+  }
+  
+  /* Botones */
+  button {
+    background-color: var(--color-primario);
+    color: white;
+    border: none;
+    transition: background-color 0.3s;
+  }
+  
+  button:hover {
+    background-color: var(--color-primario-hover);
+  }
+  
+  button:disabled {
+    background-color: var(--color-desactivado);
+    cursor: not-allowed;
+  }
+  
+  /* Mensajes */
+  .error-message {
+    color: var(--color-error);
+  }
+  
+  .success-message {
+    color: var(--color-exito);
+  }
+  
