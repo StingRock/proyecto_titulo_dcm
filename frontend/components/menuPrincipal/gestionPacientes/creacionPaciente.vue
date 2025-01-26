@@ -56,13 +56,13 @@
         <input
           id="contacto"
           v-model="paciente.contacto"
-          type="tel"
+          type="text"
           pattern="^\d{0,9}$"
           maxlength="9"
-          placeholder="Ingrese hasta 9 dígitos"
+          placeholder="Ingrese su número de contacto"
           required
         />
-        <small v-if="contactoInvalido" style="color: red;">El contacto debe contener solo números (máx. 9 dígitos).</small>
+        <small v-if="contactoInvalido" style="color: red;">El campo solo permite números, favor de corregir.</small>
       </div>
       <div>
         <label for="correo">Correo:</label>
@@ -95,135 +95,107 @@
 
 <script setup>
 import { reactive, watch, ref } from "vue";
+import axios from 'axios';
 import exportedForm from "@/components/exportedForm.vue";
 
+// Calcular digito verificador
 function calcularDigitoVerificador(rut) {
-  rut = rut.replace(/\./g, "").replace("-", "").trim();
-  if (!/^\d+$/.test(rut) || rut.length < 7 || rut.length > 8) return "";
+ rut = rut.replace(/\./g, "").replace("-", "").trim();
+ if (!/^\d+$/.test(rut) || rut.length < 7 || rut.length > 8) return "";
 
-  let suma = 0;
-  let multiplicador = 2;
+ let suma = 0;
+ let multiplicador = 2;
 
-  for (let i = rut.length - 1; i >= 0; i--) {
-    suma += parseInt(rut[i]) * multiplicador;
-    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
-  }
+ for (let i = rut.length - 1; i >= 0; i--) {
+   suma += parseInt(rut[i]) * multiplicador;
+   multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+ }
 
-  const dvEsperado = 11 - (suma % 11);
-  return dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : dvEsperado.toString();
+ const dvEsperado = 11 - (suma % 11);
+ return dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : dvEsperado.toString();
 }
 
-// Estado reactivo
 const paciente = reactive({
-  rut_paciente: "",
-  dv_paciente: "",
-  nombre: "",
-  apellido_paterno: "",
-  apellido_materno: "",
-  contacto: "",
-  correo: "",
-  prevision: "",
+ rut_paciente: "",
+ dv_paciente: "",
+ nombre: "",
+ apellido_paterno: "",
+ apellido_materno: "",
+ contacto: "",
+ correo: "",
+ prevision: "",
 });
 
 const correoInvalido = ref(false);
 const contactoInvalido = ref(false);
 const camposLetrasInvalido = ref(false);
 
-// Función para validar solo letras
 function validarSoloLetras(campo) {
-  const soloLetrasRegex = /^[a-zA-Z\s]+$/;
-  return !soloLetrasRegex.test(campo);
+ const soloLetrasRegex = /^[a-zA-Z\s]+$/;
+ return !soloLetrasRegex.test(campo);
 }
 
-// Validación del Rut
-watch(
-  () => paciente.rut_paciente,
-  (nuevoRut) => {
-    // Solo permitimos números
-    if (/[^0-9]/.test(nuevoRut)) {
-      paciente.rut_paciente = nuevoRut.replace(/[^0-9]/g, ''); // Remover cualquier cosa que no sea un número
-    }
-    paciente.dv_paciente = calcularDigitoVerificador(nuevoRut);
-  }
-);
+watch(() => paciente.rut_paciente, (nuevoRut) => {
+ if (/[^0-9]/.test(nuevoRut)) {
+   paciente.rut_paciente = nuevoRut.replace(/[^0-9]/g, '');
+ }
+ paciente.dv_paciente = calcularDigitoVerificador(nuevoRut);
+});
 
-// Validación del correo
-watch(
-  () => paciente.correo,
-  (nuevoCorreo) => {
-    const correoRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    correoInvalido.value = !correoRegex.test(nuevoCorreo);
-  }
-);
+watch(() => paciente.correo, (nuevoCorreo) => {
+  const correoRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  correoInvalido.value = !correoRegex.test(nuevoCorreo || '');
+});
 
-// Validación del contacto
-watch(
-  () => paciente.contacto,
-  (nuevoContacto) => {
-    const contactoRegex = /^\d{0,9}$/;
-    contactoInvalido.value = !contactoRegex.test(nuevoContacto);
-    if (nuevoContacto.length > 9) {
-      paciente.contacto = nuevoContacto.slice(0, 9); // Limita los caracteres a 9
-    }
+watch(() => paciente.contacto, (nuevoContacto) => {
+  if (/[^0-9]/.test(nuevoContacto)) {
+    paciente.contacto = nuevoContacto.replace(/[^0-9]/g, '');
   }
-);
+  contactoInvalido.value = !/^\d{0,9}$/.test(nuevoContacto);
+});
 
-// Validación de solo letras para los campos relevantes
-watch(
-  () => paciente.nombre,
-  (nuevoNombre) => {
-    camposLetrasInvalido.value = validarSoloLetras(nuevoNombre);
-  }
-);
-
-watch(
-  () => paciente.apellido_paterno,
-  (nuevoApellidoPaterno) => {
-    camposLetrasInvalido.value = validarSoloLetras(nuevoApellidoPaterno);
-  }
-);
-
-watch(
-  () => paciente.apellido_materno,
-  (nuevoApellidoMaterno) => {
-    camposLetrasInvalido.value = validarSoloLetras(nuevoApellidoMaterno);
-  }
-);
-
-watch(
-  () => paciente.prevision,
-  (nuevaPrevision) => {
-    camposLetrasInvalido.value = validarSoloLetras(nuevaPrevision);
-  }
-);
+// Validaciones de campos de solo letras
+['nombre', 'apellido_paterno', 'apellido_materno', 'prevision'].forEach(campo => {
+ watch(() => paciente[campo], (nuevoValor) => {
+   camposLetrasInvalido.value = validarSoloLetras(nuevoValor);
+ });
+});
 
 async function crearPaciente() {
-  if (correoInvalido.value || contactoInvalido.value || camposLetrasInvalido) {
-    alert("Por favor, corrija los errores antes de guardar.");
-    return;
-  }
+ if (correoInvalido.value || contactoInvalido.value ||camposLetrasInvalido.value) {
+   alert("Por favor, corrija los errores antes de guardar.");
+   return;
+ }
 
-  try {
-    const response = await fetch("http://localhost:3000/api/pacientes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(paciente),
-    });
+ const pacienteData = {
+   rut_paciente: paciente.rut_paciente,
+   dv_paciente: paciente.dv_paciente,
+   nombre_pcte: paciente.nombre,
+   appaterno_pcte: paciente.apellido_paterno,
+   apmaterno_pcte: paciente.apellido_materno,
+   contacto_pcte: paciente.contacto,
+   correo_pcte: paciente.correo,
+   prevision: paciente.prevision
+ };
 
-    if (!response.ok) throw new Error("Error en la API");
-
-    alert("Paciente creado exitosamente.");
-    limpiarFormulario();
+ try {
+    const response = await axios.post('/api/pacientes', pacienteData);
+    if (response.data.success) {
+      alert('Paciente creado exitosamente');
+      limpiarFormulario();
+    }
   } catch (error) {
-    console.error("Error al crear el paciente:", error);
-    alert("Hubo un error al crear el paciente.");
+    if (error.response?.status === 400) {
+      alert('El paciente ya existe');
+      limpiarFormulario();
+    } else {
+      alert('Error al crear paciente');
+    }
   }
 }
 
 function limpiarFormulario() {
-  Object.keys(paciente).forEach((key) => (paciente[key] = ""));
+ Object.keys(paciente).forEach((key) => (paciente[key] = ""));
 }
 </script>
 

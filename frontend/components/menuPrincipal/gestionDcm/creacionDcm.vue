@@ -1,6 +1,6 @@
 <template>
-  <h1>Creación de Detalle de Cuenta Médica</h1>
   <div class="crear-dcm">
+    <h1>Creación de Detalle de Cuenta Médica</h1>
     <form @submit.prevent="crearDcm">
       <div>
         <label for="rut_paciente">RUT:</label>
@@ -36,122 +36,129 @@
           </option>
         </select>
         <br>
+        <br>
         <button type="button" @click="agregarPrestacion">Agregar Prestación</button>
       </div>
-
+ 
       <ul>
         <li v-for="(prestacion, index) in prestacionesSeleccionadas" :key="index">
           {{ prestacion.descrip_prestacion }} - ${{ prestacion.valor_prestacion }}
           <button type="button" @click="eliminarPrestacion(index)">Eliminar</button>
         </li>
       </ul>
-
+ 
       <button type="submit">Crear DCM</button>
     </form>
   </div>
   <exportedForm />
 </template>
-
-
-<script setup>
-import { ref, watch } from "vue";
-import axios from "axios";
-import exportedForm from "@/components/exportedForm.vue";
-
-// Variables reactivas
-const paciente = ref({
+ 
+ <script setup>
+ import { ref, watch } from "vue";
+ import axios from "axios";
+ import exportedForm from "@/components/exportedForm.vue";
+ 
+ const paciente = ref({
   rut_paciente: "",
   dv_paciente: "",
   nombre: "",
   apellido_paterno: "",
   apellido_materno: "",
   prevision: "",
-});
-const descripcion = ref("");
-const prestaciones = ref([]);
-const prestacionSeleccionada = ref(null);
-const prestacionesSeleccionadas = ref([]);
-
-// Función para calcular el dígito verificador (DV) del RUT
-function calcularDigitoVerificador(rut) {
+ });
+ const descripcion = ref("");
+ const prestaciones = ref([]);
+ const prestacionSeleccionada = ref(null);
+ const prestacionesSeleccionadas = ref([]);
+ 
+ function calcularDigitoVerificador(rut) {
   if (!rut) return "";
   let suma = 0;
   let multiplicador = 2;
-
+ 
   for (let i = rut.length - 1; i >= 0; i--) {
     suma += parseInt(rut[i]) * multiplicador;
     multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
   }
-
+ 
   const resto = 11 - (suma % 11);
   if (resto === 11) return "0";
   if (resto === 10) return "K";
   return resto.toString();
-}
-
-// Observar cambios en `rut_paciente` para calcular el DV y obtener datos del paciente
-watch(
+ }
+ 
+ watch(
   () => paciente.value.rut_paciente,
   async (nuevoRut) => {
     if (nuevoRut) {
-      // Eliminar caracteres no numéricos para el cálculo del DV
+      // Limpia el RUT dejando solo números
       const rutSinFormato = nuevoRut.replace(/\D/g, "");
-      paciente.value.dv_paciente = calcularDigitoVerificador(rutSinFormato);
+      
+      // Solo procede si hay números
+      if (rutSinFormato.length > 0) {
+        paciente.value.dv_paciente = calcularDigitoVerificador(rutSinFormato);
 
-      // Llamar a la API para obtener los datos del paciente
-      try {
-        const response = await axios.get(`http://localhost:5000/api/pacientes/${rutSinFormato}`);
-        const datosPaciente = response.data;
-        paciente.value.nombre = datosPaciente.nombre || "";
-        paciente.value.apellido_paterno = datosPaciente.apellido_paterno || "";
-        paciente.value.apellido_materno = datosPaciente.apellido_materno || "";
-        paciente.value.prevision = datosPaciente.prevision || "";
-      } catch (error) {
-        console.error("Error al obtener los datos del paciente:", error);
+        try {
+          const response = await axios.get(`http://localhost:5000/api/pacientes/${rutSinFormato}`);
+          console.log('Respuesta API:', response.data); // Para debugging
+          
+          if (response.data) {
+            const datosPaciente = response.data;
+            Object.assign(paciente.value, {
+              nombre: datosPaciente.nombre,
+              apellido_paterno: datosPaciente.apellido_paterno,
+              apellido_materno: datosPaciente.apellido_materno,
+              prevision: datosPaciente.prevision
+            });
+          }
+        } catch (error) {
+          console.error("Error al obtener los datos del paciente:", error);
+          // Limpiar campos si hay error
+          Object.assign(paciente.value, {
+            nombre: "",
+            apellido_paterno: "",
+            apellido_materno: "",
+            prevision: ""
+          });
+        }
       }
     }
   }
 );
-
-// Obtener prestaciones desde la API
-async function obtenerPrestaciones() {
+ 
+ async function obtenerPrestaciones() {
   try {
     const response = await axios.get("http://localhost:5000/api/prestaciones");
     prestaciones.value = response.data;
   } catch (error) {
     console.error("Error al obtener prestaciones:", error);
   }
-}
-
-// Agregar prestación a la lista seleccionada
-function agregarPrestacion() {
+ }
+ 
+ function agregarPrestacion() {
   if (prestacionSeleccionada.value) {
-    // Evita duplicados
     if (!prestacionesSeleccionadas.value.some((p) => p.codigo_prestacion === prestacionSeleccionada.value.codigo_prestacion)) {
       prestacionesSeleccionadas.value.push(prestacionSeleccionada.value);
     }
     prestacionSeleccionada.value = null;
   }
-}
-
-// Eliminar prestación de la lista seleccionada
-function eliminarPrestacion(index) {
+ }
+ 
+ function eliminarPrestacion(index) {
   prestacionesSeleccionadas.value.splice(index, 1);
-}
-
-// Crear un nuevo DCM
-async function crearDcm() {
+ }
+ 
+ async function crearDcm() {
   try {
     const dcm = {
       paciente: paciente.value,
       descripcion: descripcion.value,
       prestaciones: prestacionesSeleccionadas.value,
     };
-
+ 
     await axios.post("http://localhost:5000/api/dcm", dcm);
     alert("DCM creado con éxito");
-
-    // Limpiar campos
+ 
     paciente.value = {
       rut_paciente: "",
       dv_paciente: "",
@@ -166,58 +173,59 @@ async function crearDcm() {
     console.error("Error al crear DCM:", error);
     alert("Error al crear el DCM");
   }
-}
-obtenerPrestaciones();
-</script>
-
-<style>
-.crear-dcm {
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  max-width: 600px;
-  margin: 20px auto;
+ }
+ 
+ obtenerPrestaciones();
+ </script>
+ 
+ <style>
+ .crear-dcm {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.crear-dcm h1 {
+  max-width: 900px;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+ }
+ 
+ h1 {
   font-size: 24px;
   text-align: center;
   margin-bottom: 20px;
   color: #333;
-}
-
-.crear-dcm form {
+ }
+ 
+ .crear-dcm form {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.crear-dcm label {
+ }
+ 
+ .crear-dcm label {
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 4px;
   display: block;
   color: #555;
-}
-
-.crear-dcm input,
-.crear-dcm select {
+ }
+ 
+ .crear-dcm input,
+ .crear-dcm select {
   width: 100%;
   padding: 8px;
   font-size: 14px;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
-}
-
-.crear-dcm input[readonly] {
+ }
+ 
+ .crear-dcm input[readonly] {
   background-color: #e9ecef;
   cursor: not-allowed;
-}
-
-.crear-dcm button {
+ }
+ 
+ .crear-dcm button {
   background-color: #007bff;
   color: white;
   font-size: 14px;
@@ -226,19 +234,19 @@ obtenerPrestaciones();
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-}
-
-.crear-dcm button:hover {
+ }
+ 
+ .crear-dcm button:hover {
   background-color: #0056b3;
-}
-
-.crear-dcm ul {
+ }
+ 
+ .crear-dcm ul {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.crear-dcm li {
+ }
+ 
+ .crear-dcm li {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -247,31 +255,30 @@ obtenerPrestaciones();
   border: 1px solid #ccc;
   border-radius: 4px;
   margin-bottom: 8px;
-}
-
-.crear-dcm li button {
+ }
+ 
+ .crear-dcm li button {
   background-color: #dc3545;
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
-}
-
-.crear-dcm li button:hover {
+ }
+ 
+ .crear-dcm li button:hover {
   background-color: #a71d2a;
-}
-
-.crear-dcm .error-message {
+ }
+ 
+ .crear-dcm .error-message {
   color: #dc3545;
   font-size: 14px;
   margin-top: 10px;
   text-align: center;
-}
-
-.crear-dcm .success-message {
+ }
+ 
+ .crear-dcm .success-message {
   color: #28a745;
   font-size: 14px;
   margin-top: 10px;
   text-align: center;
-}
-
-</style>
+ }
+ </style>

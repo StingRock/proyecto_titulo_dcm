@@ -4,26 +4,35 @@ import vue from '@vitejs/plugin-vue';
 import vueDevTools from 'vite-plugin-vue-devtools';
 
 export default defineConfig({
+  logLevel: 'debug',
   plugins: [
     vue(),
-    vueDevTools(),
+    vueDevTools()
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./frontend', import.meta.url)),
     },
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },  
+
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:9000',
+      changeOrigin: true,
+      // Añadir configuración de timeout
+      timeout: 5000,
+      // Añadir logs de proxy
+      configure: (proxy, options) => {
+        proxy.on('error', (err, req, res) => {
+          console.log('Proxy error:', err);
+        });
+      }
+    }
+  }
+}
 });
+
 
 
 

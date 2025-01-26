@@ -16,8 +16,8 @@ const router = createRouter({
       component: ingresoUsuario
     },
     {
-      path: '/gestionPaciente',
-      name: 'gestionPaciente',
+      path: '/gestionPacientes',
+      name: 'gestionPacientes',
       component: gestionPacientes
     },
     {
@@ -46,6 +46,18 @@ const router = createRouter({
       component: listadoRegistroDcm
     },
   ]
-})
+});
+
+router.beforeEach((to, from, next) => {
+  const userType = localStorage.getItem('userType');
+
+  if (to.path !== '/' && !userType) {
+    next('/');
+  } else if (to.path === '/modificacionPaciente' && userType !== '1') {
+    next('/gestionPacientes');
+  } else {
+    next();
+  }
+});
 
 export default router

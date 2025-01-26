@@ -1,28 +1,15 @@
-<script setup>
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-function goToHome() {
-    if (router.currentRoute.value.path !== '/') {
-        router.push('/');
-    }
-}
-</script>
-
 <template>
     <div class="layout">
-      <!-- Menú superior -->
       <nav class="topbar">
         <h2>Menú Principal</h2>
         <ul>
           <li>
-            <a href="#" @click.prevent="goToHome">Gestión de Pacientes</a>
+            <router-link to="/gestionPacientes">Gestión de Pacientes</router-link>
           </li>
           <li>
             <router-link to="/creacionPaciente">Creación de Pacientes</router-link>
           </li>
-          <li>
+          <li v-if="userType === '1'">
             <router-link to="/modificacionPaciente">Modificación de Ficha de Pacientes</router-link>
           </li>
           <li>
@@ -34,6 +21,12 @@ function goToHome() {
           <li>
             <router-link to="/listadoRegistroDcm">Listado de Detalles de Cuenta Médica</router-link>
           </li>
+          <br>
+          <br>
+          <br>
+          <li>
+            <a href="#" @click.prevent="goToHome">Cerrar sesión</a>
+          </li>
         </ul>
       </nav>
   
@@ -43,7 +36,23 @@ function goToHome() {
       </main>
     </div>
   </template>
-  
+
+<script setup>
+import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+
+const router = useRouter();
+const userType = ref(null);
+
+onMounted(() => {
+  userType.value = localStorage.getItem('userType');
+});
+
+function goToHome() {
+  localStorage.removeItem('userType');
+    router.push('/');
+}
+</script>
 
 <style>
 
@@ -118,6 +127,21 @@ function goToHome() {
     width: 100%;
     margin-top: 20px;
   }
+}
+
+.topbar {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar ul {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+li:last-child {
+  margin-top: auto;
 }
 
 </style>

@@ -15,18 +15,4 @@ const DcmSchema = new mongoose.Schema({
     arancel: { type: ArancelSchema, required: true }
 });
 
-// Definición de PacienteSchema
-const PacienteSchema = new mongoose.Schema({
-    rut_paciente: { type: Number, required: true, unique: true },
-    dv_paciente: { type: Number, required: true },
-    nombre_pcte: { type: String, required: true },
-    appaterno_pcte: { type: String, required: true },
-    apmaterno_pcte: { type: String, required: true },
-    contacto_pcte: { type: Number, required: true },
-    correo_pcte: { type: String, required: true, unique: true },
-    prevision: { type: String, required: true },
-    dcm: { type: [DcmSchema], required: true }
-}, { timestamps: true });
-
-
 export const Paciente = mongoose.model('Paciente', PacienteSchema);

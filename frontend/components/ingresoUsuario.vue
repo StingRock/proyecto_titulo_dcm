@@ -16,8 +16,10 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
+const router = useRouter();
 const usuario = ref('');
 const password = ref('');
 const errorMessage = ref('');
@@ -34,12 +36,12 @@ const login = async () => {
     });
 
     if (response.data.valid) {
+      localStorage.setItem('userType', response.data.tipo_usuario);
       alert(response.data.message);
-    } else {
-      errorMessage.value = response.data.message || 'Error al iniciar sesión...';
+      router.push('/gestionPacientes');
     }
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Error al iniciar sesión!!!';
+    errorMessage.value = error.response?.data?.message || 'Error en el servidor';
   } finally {
     isLoading.value = false;
   }
