@@ -4,6 +4,22 @@ import { Paciente } from '../models/modelsPacientes.js';
 
 const router = express.Router();
 
+//CRUD
+
+//Ruta para eliminar un paciente
+router.delete('/pacientes/:rut', async (req, res) => {
+  try {
+    const paciente = await Paciente.findOneAndDelete({ rut_paciente: req.params.rut });
+
+    if (!paciente) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
+    res.json({ message: 'Paciente eliminado con éxito' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Ruta para buscar un paciente
 router.get('/pacientes/:rut', async (req, res) => {
   try {

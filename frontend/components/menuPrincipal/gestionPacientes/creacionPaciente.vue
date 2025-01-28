@@ -16,7 +16,11 @@
       </div>
       <div>
         <label for="dv_paciente">Dígito Verificador:</label>
-        <input id="dv_paciente" v-model="paciente.dv_paciente" placeholder="Dígito verificador" readonly />
+        <input 
+          id="dv_paciente" 
+          v-model="paciente.dv_paciente" 
+          placeholder="Dígito verificador" 
+          readonly />
       </div>
       <div>
         <label for="nombre">Nombres:</label>
