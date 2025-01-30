@@ -1,8 +1,13 @@
-[build]
+[
+build
+]
+  base = "frontend"
   command = "npm install && npm run build"
   publish = "dist"
 
-[[redirects]]
+[[
+redirects
+]]
   from = "/*"
   to = "/index.html"
   status = 200
