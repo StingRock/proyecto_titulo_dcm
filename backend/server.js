@@ -2,9 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './database.js';
 import dotenv from 'dotenv';
-import userRoutes from './routes/routesDcm.js';
-import pacientesRoutes from './routes/routesDcm.js';
-import buscarPacientesRoutes from './routes/routesDcm.js'
+import routes from './routes/routesDcm.js';
 
 const app = express();
 
@@ -13,7 +11,7 @@ dotenv.config();
 // Middlewares
 app.use(cors({
   origin: 'http://localhost:5173',
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 
@@ -25,10 +23,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rutas
-app.use('/api', userRoutes);
-app.use('/api', pacientesRoutes);
-app.use('/api', buscarPacientesRoutes);
+// Ruta
+app.use('/api', routes);
 
 // Middlewares para el manejo de errores
 app.use((err, req, res, next) => {

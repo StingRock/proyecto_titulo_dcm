@@ -1,11 +1,129 @@
 import express from 'express';
 import { User } from '../models/modelUser.js';
 import { Paciente } from '../models/modelsPacientes.js';
+import { Aranceles } from '../models/modelsAranceles.js';
+import { Dcm } from '../models/modelsDcm.js';
 
 const router = express.Router();
 
-//CRUD
+// Ruta para obtener todos los DCMs
+router.get('/dcm', async (req, res) => {
+  try {
+    const dcms = await Dcm.find()
+      .sort({ fecha_hora_creacion_dcm: -1 });
 
+    console.log('DCMs encontrados:', dcms.length);
+    res.json(dcms);
+  } catch (error) {
+    console.error('Error al obtener DCMs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener los DCMs',
+      error: error.message
+    });
+  }
+});
+
+// Ruta para obtener DCMs por RUT de paciente
+router.get('/dcm/paciente/:rut', async (req, res) => {
+  try {
+    const dcms = await Dcm.find({ 
+      paciente_rut: req.params.rut 
+    }).sort({ fecha_hora_creacion_dcm: -1 });
+
+    if (!dcms || dcms.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontraron DCMs para este paciente'
+      });
+    }
+
+    res.json(dcms);
+  } catch (error) {
+    console.error('Error al obtener DCMs del paciente:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener los DCMs del paciente',
+      error: error.message
+    });
+  }
+});
+
+// Ruta para crear un DCM
+router.post('/dcm/crear', async (req, res) => {
+  try {
+    console.log('Datos recibidos para crear DCM:', req.body);
+
+    // Validar campos requeridos
+    const camposRequeridos = [
+      'paciente_rut',
+      'paciente_dv',
+      'nombre_completo_paciente',
+      'prestacion_codigo',
+      'prestacion_descripcion',
+      'prestacion_valor'
+    ];
+
+    for (const campo of camposRequeridos) {
+      if (!req.body[campo]) {
+        return res.status(400).json({
+          success: false,
+          message: `El campo ${campo} es requerido`
+        });
+      }
+    }
+
+    // Crear el DCM
+    const dcm = new Dcm(req.body);
+    await dcm.save();
+
+    console.log('DCM creado:', dcm);
+
+    res.status(201).json({
+      success: true,
+      message: 'DCM creado exitosamente',
+      data: dcm
+    });
+
+  } catch (error) {
+    console.error('Error al crear DCM:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear el DCM',
+      error: error.message
+    });
+  }
+});
+
+// Ruta para buscar prestaciones
+router.get('/prestaciones/buscar', async (req, res) => {
+  try {
+    const searchTerm = req.query.q;
+    console.log('Término de búsqueda:', searchTerm);
+    
+    if (!searchTerm) {
+      return res.json([]);
+    }
+
+    const prestaciones = await Aranceles.find({
+      $or: [
+        { codigo_prestacion: { $regex: searchTerm, $options: 'i' } },
+        { descrip_prestacion: { $regex: searchTerm, $options: 'i' } }
+      ]
+    }).limit(10);
+    
+    console.log('Prestaciones encontradas:', prestaciones.length);
+    res.json(prestaciones);
+  } catch (error) {
+    console.error('Error en búsqueda:', error);
+    res.status(500).json({ 
+      message: 'Error al buscar prestaciones',
+      error: error.message 
+    });
+  }
+});
+
+// ----------------------- CRUD ----------------------- //
 //Ruta para eliminar un paciente
 router.delete('/pacientes/:rut', async (req, res) => {
   try {
