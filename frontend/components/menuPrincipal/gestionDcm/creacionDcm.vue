@@ -296,57 +296,57 @@ const manejarCambioRut = async () => {
     }
 
     // En creacionDcm.vue, dentro del setup()
-const crearDcm = async () => {
-  if (!validarRut()) {
-    alert('RUT inválido')
-    return
-  }
-
-  if (selectedServices.value.length === 0) {
-    alert('Debe seleccionar al menos una prestación')
-    return
-  }
-
-  try {
-    // Crear un DCM por cada prestación seleccionada
-    const dcmPromises = selectedServices.value.map(prestacion => {
-      const dcmData = {
-        paciente_rut: rutInput.value,
-        paciente_dv: dvInput.value,
-        nombre_completo_paciente: `${paciente.nombre_pcte} ${paciente.appaterno_pcte} ${paciente.apmaterno_pcte}`.trim(),
-        contacto_paciente: paciente.contacto_pcte || '',
-        correo_paciente: paciente.correo_pcte || '',
-        prestacion_codigo: prestacion.codigo_prestacion,
-        prestacion_descripcion: prestacion.descrip_prestacion,
-        prestacion_valor: prestacion.valor_prestacion,
-        prevision_paciente: paciente.prevision || '',
-        descripcion_dcm: '',
-        usuario_responsable: ''
+    const crearDcm = async () => {
+      if (!validarRut()) {
+        alert('RUT inválido')
+        return
       }
 
-      console.log('Enviando DCM:', dcmData)
-      return axios.post('/api/dcm/crear', dcmData)
-    })
+      if (selectedServices.value.length === 0) {
+        alert('Debe seleccionar al menos una prestación')
+        return
+      }
 
-    const responses = await Promise.all(dcmPromises)
-    const allSuccess = responses.every(response => response.data.success)
+      try {
+        // Crear un DCM por cada prestación seleccionada
+        const dcmPromises = selectedServices.value.map(prestacion => {
+          const dcmData = {
+            paciente_rut: rutInput.value,
+            paciente_dv: dvInput.value,
+            nombre_completo_paciente: `${paciente.nombre_pcte} ${paciente.appaterno_pcte} ${paciente.apmaterno_pcte}`.trim(),
+            contacto_paciente: paciente.contacto_pcte || '',
+            correo_paciente: paciente.correo_pcte || '',
+            prestacion_codigo: prestacion.codigo_prestacion,
+            prestacion_descripcion: prestacion.descrip_prestacion,
+            prestacion_valor: prestacion.valor_prestacion,
+            prevision_paciente: paciente.prevision || '',
+            descripcion_dcm: '',
+            usuario_responsable: ''
+          }
 
-    if (allSuccess) {
-      alert(`Se crearon ${selectedServices.value.length} DCMs exitosamente`)
-      // Limpiar formulario
-      selectedServices.value = []
-      rutInput.value = ''
-      dvInput.value = ''
-      Object.keys(paciente).forEach(key => paciente[key] = '')
-      searchTerm.value = ''
-      searchResults.value = []
+          console.log('Enviando DCM:', dcmData)
+          return axios.post('/api/dcm/crear', dcmData)
+        })
+
+        const responses = await Promise.all(dcmPromises)
+        const allSuccess = responses.every(response => response.data.success)
+
+        if (allSuccess) {
+          alert(`Se crearon ${selectedServices.value.length} DCMs exitosamente`)
+          // Limpiar formulario
+          selectedServices.value = []
+          rutInput.value = ''
+          dvInput.value = ''
+          Object.keys(paciente).forEach(key => paciente[key] = '')
+          searchTerm.value = ''
+          searchResults.value = []
+        }
+      } catch (error) {
+        console.error('Error al crear DCMs:', error)
+        const errorMessage = error.response?.data?.message || 'Error al crear los DCMs'
+        alert(errorMessage)
+      }
     }
-  } catch (error) {
-    console.error('Error al crear DCMs:', error)
-    const errorMessage = error.response?.data?.message || 'Error al crear los DCMs'
-    alert(errorMessage)
-  }
-}
 
     return {
       rutInput,
